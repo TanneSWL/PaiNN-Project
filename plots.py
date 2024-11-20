@@ -4,6 +4,7 @@ Chat very good
 '''
 
 import matplotlib.pyplot as plt
+import os
 
 def simple_loss_plot(losses):
     """
@@ -15,6 +16,9 @@ def simple_loss_plot(losses):
     Returns:
     None
     """
+
+    os.makedirs('output', exist_ok=True)
+
     plt.figure(figsize=(10, 6))
     plt.plot(losses, marker='o', linestyle='-', color='b', label='Loss')
     plt.xlabel('Epochs')
@@ -23,4 +27,5 @@ def simple_loss_plot(losses):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
+    plt.savefig('output/loss_epoch_graph.png')
     plt.show()
