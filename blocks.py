@@ -24,6 +24,7 @@ class MessageBlock(nn.Module):
         )
 
     self.linear_rbf = nn.Linear(num_rbf_features, num_features * 3)
+    self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
   def forward(self,
               s,
@@ -38,8 +39,8 @@ class MessageBlock(nn.Module):
     num_atoms = s.size(0)
 
     # Initialize ds and dvec.
-    ds = torch.zeros(num_atoms, self.num_features)
-    dvec = torch.zeros(num_atoms, 3, self.num_features)
+    ds = torch.zeros(num_atoms, self.num_features).to(self.device)
+    dvec = torch.zeros(num_atoms, 3, self.num_features).to(self.device)
 
     # Let S be the neighbors of the neigboring pairs in the egde index vector.
     # That is, S has the shape: num_edges x num_features (embedding)

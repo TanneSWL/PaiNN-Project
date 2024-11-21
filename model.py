@@ -96,7 +96,7 @@ class PaiNN(nn.Module):
 
         s = self.embedding_s(atoms)
         #vec = self.embedding_v(atoms)
-        vec = torch.zeros(s.size(0), 3, s.size(1))
+        vec = torch.zeros(s.size(0), 3, s.size(1)).to(self.device)
 
         # ----------------------------------------------------------------------
         # LOCAL NEIGHBORHOOD
@@ -106,6 +106,10 @@ class PaiNN(nn.Module):
         edge_indexes, edge_vector, edge_distance = LocalEdges(atom_positions,
                                                               graph_indexes,
                                                               self.cutoff_dist)
+        
+        edge_indexes = edge_indexes.to(self.device)
+        edge_vector = edge_vector.to(self.device)
+        edge_distance = edge_distance.to(self.device)
 
         # ----------------------------------------------------------------------
         # RADIAL BASIS
@@ -113,7 +117,7 @@ class PaiNN(nn.Module):
         edge_rbf = RadialBasis(edge_distance,
                                self.num_rbf_features,
                                self.cutoff_dist)
-
+        edge_rbf = edge_rbf.to(self.device)
         # ----------------------------------------------------------------------
         # MESSAGE AND UPDATE
 

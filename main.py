@@ -50,6 +50,7 @@ def main():
         num_rbf_features=args.num_rbf_features,
         num_unique_atoms=args.num_unique_atoms,
         cutoff_dist=args.cutoff_dist,                                   # 5
+        device=device
     )
 
     post_processing = AtomwisePostProcessing(

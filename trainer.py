@@ -6,7 +6,7 @@ from data import GetTarget, QM9DataModule, AtomwisePostProcessing
 from model import PaiNN
 
 import torch
-import torch.functional as F
+import torch.nn.functional as F
 
 def training(epoch_range, model, optimizer, post_processing, dm, device):
     '''
@@ -66,7 +66,5 @@ def evaluate(model, dm, post_processing, device):
             
     return mae
 
-    mae /= len(dm.data_test)
-    unit_conversion = dm.unit_conversion[args.target]
-    print(f'Test MAE: {unit_conversion(mae):.3f}')
+    
     
