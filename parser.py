@@ -1,5 +1,5 @@
 '''
-This file contains something for Hyperparameters ?
+This file contains something for Hyperparameters
 
 '''
 import argparse
@@ -11,10 +11,13 @@ def cli(args: list = []):
     # Data
     parser.add_argument('--target', default=7, type=int) # 7 => Internal energy at 0K
     parser.add_argument('--data_dir', default='data/', type=str)
-    parser.add_argument('--batch_size_train', default=10, type=int) #100
-    parser.add_argument('--batch_size_inference', default=100, type=int) #1000
+    #parser.add_argument('--batch_size_train', default=100, type=int)
+    parser.add_argument('--batch_size_train', default=10, type=int) #first run
+    #parser.add_argument('--batch_size_inference', default=1000, type=int)
+    parser.add_argument('--batch_size_inference', default=100, type=int) ##first run
     parser.add_argument('--num_workers', default=0, type=int)
-    parser.add_argument('--splits', nargs=3, default=[1100, 100, 100], type=int) # [num_train, num_val, num_test] #default=[110000, 10000, 10831]
+    parser.add_argument('--splits', nargs=3, default=[110000, 10000, 10831], type=int) # [num_train, num_val, num_test]
+    #parser.add_argument('--splits', nargs=3, default=[1100, 100, 100], type=int) # [num_train, num_val, num_test] #default=[110000, 10000, 10831] #first run
     parser.add_argument('--subset_size', default=None, type=int)
 
     # Model
@@ -26,9 +29,10 @@ def cli(args: list = []):
     parser.add_argument('--cutoff_dist', default=5.0, type=float)
 
     # Training
-    parser.add_argument('--lr', default=5e-4, type=float) #5e-4
+    parser.add_argument('--lr', default=5e-4, type=float) 
     parser.add_argument('--weight_decay', default=0.01, type=float)
-    parser.add_argument('--num_epochs', default=100, type=int) #1000
+    parser.add_argument('--num_epochs', default=10, type=int) 
+    #parser.add_argument('--num_epochs', default=100, type=int) #1000 #first run
 
     args = parser.parse_args(args=args)
     return args

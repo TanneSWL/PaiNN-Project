@@ -4,7 +4,7 @@ from utils import LocalEdges, RadialBasis, CosineCutoff
 from blocks import MessageBlock, UpdateBlock
 from model import PaiNN
 from parser import cli
-from trainer import training, evaluate
+from trainer import training, evaluate, test
 from plots import simple_loss_plot
 
 # Import packages
@@ -12,6 +12,8 @@ import torch
 from pytorch_lightning import seed_everything
 from tqdm import trange
 import os
+import torch.optim as optim
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 # This comes from "Training and testing" cell from notebook.py 
 
@@ -66,27 +68,32 @@ def main():
         lr=args.lr,
         weight_decay=args.weight_decay,
     )
+
+    scheduler = ReduceLROnPlateau(optimizer = optimizer,
+                                  mode = 'min',
+                                  factor = 0.1)
     
     # Train the model.
     pbar = trange(args.num_epochs)
 
-    losses = training(
+    losses, evals = training(
         epoch_range=pbar, 
         model=painn, 
         optimizer=optimizer, 
         post_processing=post_processing, 
         dm = dm, 
-        device=device
+        device=device,
+        scheduler=scheduler
     )
 
-    mae = evaluate(
+    mae = test(
         model=painn, 
         dm=dm, 
         post_processing=post_processing, 
         device=device
     )
 
-    mae /= len(dm.data_test)
+    #mae /= len(dm.data_test)
     unit_conversion = dm.unit_conversion[args.target]
     print(f'Test MAE: {unit_conversion(mae):.3f}')
 
