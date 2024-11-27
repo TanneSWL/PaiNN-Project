@@ -4,11 +4,12 @@ from utils import LocalEdges, RadialBasis, CosineCutoff
 from blocks import MessageBlock, UpdateBlock
 from model import PaiNN
 from parser import cli
-from trainer import training, evaluate, test
+from trainer import training, test
 from plots import simple_loss_plot
 
 # Import packages
 import torch
+import csv
 from pytorch_lightning import seed_everything
 from tqdm import trange
 import os
@@ -19,12 +20,13 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 def main():
     # set working directory
-    os.chdir('PaiNN-Project') # comment out if working directory already is git folder
+    #os.chdir('PaiNN-Project') # comment out if working directory already is git folder
 
     args = []
     args = cli(args)
     seed_everything(args.seed)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    
     # Load and prepare data from the QM9 data set.
     dm = QM9DataModule(
         target=args.target,
@@ -76,7 +78,7 @@ def main():
     # Train the model.
     pbar = trange(args.num_epochs)
 
-    losses, evals = training(
+    losses_train, losses_eval = training(
         epoch_range=pbar, 
         model=painn, 
         optimizer=optimizer, 
@@ -93,11 +95,20 @@ def main():
         device=device
     )
 
-    #mae /= len(dm.data_test)
     unit_conversion = dm.unit_conversion[args.target]
-    print(f'Test MAE: {unit_conversion(mae):.3f}')
+    MAE = unit_conversion(mae)
 
-    simple_loss_plot(losses)
+    os.makedirs('output', exist_ok=True) 
+    
+    with open('output/train_eval_MAE.csv', "w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(losses_train)  # Write list1
+        writer.writerow(losses_eval)   # Write list2
+
+    with open('output/test_MAE.csv', "w", newline="") as file:
+        file.write(str(MAE))
+
+    #simple_loss_plot(losses)
 
 if __name__ == "__main__":
     main()
