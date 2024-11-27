@@ -12,26 +12,36 @@ def training(epoch_range, model, optimizer, post_processing, dm, device, schedul
     '''
     This function performs the training loop
     '''
-    model.train() # Voers add
     
-    losses = [] #Vores add
-    maes_epoch = []
+    # Create lists to collect the train and evalutation loss for each epoch.
+    losses_train = [] 
+    losses_eval  = []
+
     for epoch in epoch_range:
 
-        loss_epoch = 0.
+        loss_train_epoch = 0
+        loss_eval_epoch  = 0
+
+        #-----------------------------------------------------------------------#
+        # TRAIN
+
+        model.train() 
+        
         for batch in dm.train_dataloader():
+            
             batch = batch.to(device)
 
             atomic_contributions = model(
-                atoms=batch.z,
-                atom_positions=batch.pos,
-                graph_indexes=batch.batch
+                atoms = batch.z,
+                atom_positions = batch.pos,
+                graph_indexes = batch.batch
             )
             preds = post_processing(
-                atoms=batch.z,
-                graph_indexes=batch.batch,
-                atomic_contributions=atomic_contributions,
+                atoms = batch.z,
+                graph_indexes = batch.batch,
+                atomic_contributions = atomic_contributions,
             )
+            
             #loss_step = F.mse_loss(preds, batch.y, reduction='sum')
             loss_step = F.l1_loss(preds, batch.y, reduction='sum')
 
@@ -41,62 +51,71 @@ def training(epoch_range, model, optimizer, post_processing, dm, device, schedul
             loss.backward()
             optimizer.step()
 
-            loss_epoch += loss_step.detach().item()
-        loss_epoch /= len(dm.data_train)
-        losses.append(loss_epoch) # Vores add - loss for hver epoch
-        epoch_range.set_postfix_str(f'Train loss: {loss_epoch:.3e}')
+            loss_train_epoch += loss_step.detach().item()
+        
+        loss_train_epoch /= len(dm.data_train)
+        losses_train.append(loss_train_epoch) 
+        epoch_range.set_postfix_str(f'Train loss: {loss_train_epoch:.3e}')
 
-        mae_epoch = evaluate(model, #lidt i tvivl her 
-                             dm=dm, 
-                             post_processing=post_processing, 
-                             device=device)
-        maes_epoch.append(mae_epoch) 
+        #-----------------------------------------------------------------------#
+        # VALIDATION
 
-        scheduler.step(mae_epoch)
+        model.eval()
 
-    return losses, maes_epoch
+        with torch.no_grad():
 
-def evaluate(model, dm, post_processing, device):
-    mae = 0
-    model.eval()
-    with torch.no_grad():
-        for batch in dm.val_dataloader():
-            batch = batch.to(device)
+            for batch in dm.val_dataloader():
+                
+                batch = batch.to(device)
 
-            atomic_contributions = model(
-                atoms=batch.z,
-                atom_positions=batch.pos,
-                graph_indexes=batch.batch,
-            )
-            preds = post_processing(
-                atoms=batch.z,
-                graph_indexes=batch.batch,
-                atomic_contributions=atomic_contributions,
-            )
-            mae += F.l1_loss(preds, batch.y, reduction='sum')
-    mae /= len(dm.data_val)
-            
-    return mae
+                atomic_contributions = model(
+                    atoms = batch.z,
+                    atom_positions = batch.pos,
+                    graph_indexes = batch.batch,
+                )
+                preds = post_processing(
+                    atoms = batch.z,
+                    graph_indexes = batch.batch,
+                    atomic_contributions = atomic_contributions,
+                )
+                
+                loss_step = F.l1_loss(preds, batch.y, reduction='sum')
 
+                loss_eval_epoch += loss_step.detach().item()
+    
+        loss_eval_epoch /= len(dm.data_val)
+        losses_eval.append(loss_eval_epoch) 
+        epoch_range.set_postfix_str(f'Evaluation loss: {loss_eval_epoch:.3e}')
+
+        scheduler.step(loss_eval_epoch)
+
+    return losses_train, losses_eval
 
 def test(model, dm, post_processing, device):
+    
     mae = 0
+    
     model.eval()
+    
     with torch.no_grad():
+        
         for batch in dm.test_dataloader():
+            
             batch = batch.to(device)
 
             atomic_contributions = model(
-                atoms=batch.z,
-                atom_positions=batch.pos,
-                graph_indexes=batch.batch,
+                atoms = batch.z,
+                atom_positions = batch.pos,
+                graph_indexes = batch.batch,
             )
             preds = post_processing(
-                atoms=batch.z,
-                graph_indexes=batch.batch,
-                atomic_contributions=atomic_contributions,
+                atoms = batch.z,
+                graph_indexes = batch.batch,
+                atomic_contributions = atomic_contributions,
             )
-            mae += F.l1_loss(preds, batch.y, reduction='sum')
+            
+            mae += F.l1_loss(preds, batch.y, reduction='sum').detach().item()
+    
     mae /= len(dm.data_test)
             
     return mae
