@@ -96,7 +96,8 @@ def test(model, dm, post_processing, device):
     mae = 0
     
     model.eval()
-    
+    predictions = []
+    true_labels = []
     with torch.no_grad():
         
         for batch in dm.test_dataloader():
@@ -115,10 +116,17 @@ def test(model, dm, post_processing, device):
             )
             
             mae += F.l1_loss(preds, batch.y, reduction='sum').detach().item()
+
+            true_label = batch.y.squeeze(1).tolist()
+            true_labels.extend(true_label)
+
+            prediction = preds.squeeze(1).tolist()
+            predictions.extend(prediction)
     
     mae /= len(dm.data_test)
             
-    return mae
+    return mae, predictions, true_labels
+
 
     
     

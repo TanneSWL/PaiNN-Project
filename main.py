@@ -5,11 +5,12 @@ from blocks import MessageBlock, UpdateBlock
 from model import PaiNN
 from parser import cli
 from trainer import training, test
-from plots import simple_loss_plot
+from plots import simple_loss_plot, true_pred_plot
 
 # Import packages
 import torch
 import csv
+import pandas as pd
 from pytorch_lightning import seed_everything
 from tqdm import trange
 import os
@@ -20,7 +21,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 def main():
     # set working directory
-    #os.chdir('PaiNN-Project') # comment out if working directory already is git folder
+    os.chdir('PaiNN-Project') # comment out if working directory already is git folder
 
     args = []
     args = cli(args)
@@ -45,7 +46,8 @@ def main():
     y_mean, y_std, atom_refs = dm.get_target_stats(
         remove_atom_refs=True, divide_by_atoms=True
     )
-
+    print('length of test set')
+    print(len(dm.data_test))
     # Initialize the model.
     painn = PaiNN(
         num_message_passing_layers=args.num_message_passing_layers,     # 3
@@ -88,7 +90,7 @@ def main():
         scheduler=scheduler
     )
 
-    mae = test(
+    mae, predictions, true_labels = test(
         model=painn, 
         dm=dm, 
         post_processing=post_processing, 
@@ -108,7 +110,29 @@ def main():
     with open('output/test_MAE.csv', "w", newline="") as file:
         file.write(str(MAE))
 
-    #simple_loss_plot(losses)
+    # make a pandas dataframe and save it to a csv
+    data1 = {
+        'Training loss': losses_train,
+        'Validation loss': losses_eval
+    }
+    df = pd.DataFrame(data1)
+    df.to_csv('output/train_val_loss_pandas.csv', index=False)
+
+    # make a pandas dataframe and save it to a csv
+    data2 = {
+        'True Labels': true_labels,
+        'Predictions': predictions
+    }
+    df = pd.DataFrame(data2)
+    df.to_csv('output/predictions_vs_true_labels_pandas.csv', index=False)
+    
+    with open('output/preds_and_true_labels.csv', "w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(predictions)
+        writer.writerow(true_labels)
+
+    simple_loss_plot(losses_train, losses_eval)
+    true_pred_plot(predictions=predictions, true_labels=true_labels)
 
 if __name__ == "__main__":
     main()
