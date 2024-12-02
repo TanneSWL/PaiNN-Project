@@ -17,11 +17,11 @@ def cli(args: list = []):
     #parser.add_argument('--batch_size_inference', default=100, type=int) ##first run
     parser.add_argument('--num_workers', default=0, type=int)
     parser.add_argument('--splits', nargs=3, default=[110000, 10000, 10831], type=int) # [num_train, num_val, num_test]
-    #parser.add_argument('--splits', nargs=3, default=[1100, 100, 100], type=int) # [num_train, num_val, num_test] #default=[110000, 10000, 10831] #first run
+    #parser.add_argument('--splits', nargs=3, default=[110, 10, 10], type=int) # [num_train, num_val, num_test] #default=[110000, 10000, 10831] #first run
     parser.add_argument('--subset_size', default=None, type=int)
 
     # Model
-    parser.add_argument('--num_message_passing_layers', default=3, type=int)
+    parser.add_argument('--num_message_passing_layers', default=1, type=int)
     parser.add_argument('--num_features', default=128, type=int)
     parser.add_argument('--num_outputs', default=1, type=int)
     parser.add_argument('--num_rbf_features', default=20, type=int)
@@ -31,8 +31,8 @@ def cli(args: list = []):
     # Training
     parser.add_argument('--lr', default=5e-4, type=float) 
     parser.add_argument('--weight_decay', default=0.01, type=float)
-    #parser.add_argument('--num_epochs', default=10, type=int) 
-    parser.add_argument('--num_epochs', default=400, type=int) #1000 #first run
+    parser.add_argument('--num_epochs', default=500, type=int) 
+    #parser.add_argument('--num_epochs', default=100, type=int) #1000 #first run
 
     args = parser.parse_args(args=args)
     return args
