@@ -4,7 +4,7 @@ from utils import LocalEdges, RadialBasis, CosineCutoff
 from blocks import MessageBlock, UpdateBlock
 from model import PaiNN
 from parser import cli
-from trainer import training, test
+from trainer import training, test, EarlyStopping
 from plots import simple_loss_plot, true_pred_plot
 
 # Import packages
@@ -21,7 +21,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 def main():
     # set working directory
-    os.chdir('PaiNN-Project') # comment out if working directory already is git folder
+    #os.chdir('PaiNN-Project') # comment out if working directory already is git folder
 
     args = []
     args = cli(args)
@@ -77,6 +77,8 @@ def main():
                                   mode = 'min',
                                   factor = 0.1)
     
+    early_stopping = EarlyStopping(patience=20, min_delta=0)
+
     # Train the model.
     pbar = trange(args.num_epochs)
 
@@ -87,10 +89,11 @@ def main():
         post_processing=post_processing, 
         dm = dm, 
         device=device,
-        scheduler=scheduler
+        scheduler=scheduler,
+        early_stopping = early_stopping
     )
 
-    mae, predictions, true_labels = test(
+    mae, predictions, true_labels, smiles = test(
         model=painn, 
         dm=dm, 
         post_processing=post_processing, 
@@ -121,7 +124,8 @@ def main():
     # make a pandas dataframe and save it to a csv
     data2 = {
         'True Labels': true_labels,
-        'Predictions': predictions
+        'Predictions': predictions,
+        'Smiles': smiles
     }
     df = pd.DataFrame(data2)
     df.to_csv('output/predictions_vs_true_labels_pandas.csv', index=False)
