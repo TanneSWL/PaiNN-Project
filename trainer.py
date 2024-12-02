@@ -8,7 +8,38 @@ from model import PaiNN
 import torch
 import torch.nn.functional as F
 
-def training(epoch_range, model, optimizer, post_processing, dm, device, scheduler):
+class EarlyStopping:
+    def __init__(self, patience=20, min_delta=0):
+        """
+        Patience: How many epochs to wait after the last improvement.
+        min_delta: Minimum change considered as improvement.
+        """
+        
+        self.patience = patience
+        self.min_delta = min_delta
+        self.best_loss = float('inf')
+        self.counter = 0
+        self.stopped_epoch = 0
+        self.early_stop = False
+
+    def __call__(self, val_loss, epoch):
+        """
+        Checks whether early stopping criteria are met.
+        val_loss: Current validation loss.
+        epoch: Current epoch.
+        """
+        
+        if val_loss < self.best_loss - self.min_delta:
+            self.best_loss = val_loss
+            self.counter = 0
+        else:
+            self.counter += 1
+            if self.counter >= self.patience:
+                self.early_stop = True
+                self.stopped_epoch = epoch
+
+
+def training(epoch_range, model, optimizer, post_processing, dm, device, scheduler, early_stopping):
     '''
     This function performs the training loop
     '''
@@ -89,6 +120,13 @@ def training(epoch_range, model, optimizer, post_processing, dm, device, schedul
 
         scheduler.step(loss_eval_epoch)
 
+        #-----------------------------------------------------------------------#
+        # EARLY STOPPING
+
+        early_stopping(loss_eval_epoch, epoch)
+        if early_stopping.early_stop:
+            break
+
     return losses_train, losses_eval
 
 def test(model, dm, post_processing, device):
@@ -98,6 +136,8 @@ def test(model, dm, post_processing, device):
     model.eval()
     predictions = []
     true_labels = []
+    smiles_list = []
+
     with torch.no_grad():
         
         for batch in dm.test_dataloader():
@@ -119,13 +159,16 @@ def test(model, dm, post_processing, device):
 
             true_label = batch.y.squeeze(1).tolist()
             true_labels.extend(true_label)
+            
+            smiles = batch.smiles
+            smiles_list.extend(smiles)
 
             prediction = preds.squeeze(1).tolist()
             predictions.extend(prediction)
     
     mae /= len(dm.data_test)
             
-    return mae, predictions, true_labels
+    return mae, predictions, true_labels, smiles_list
 
 
     
