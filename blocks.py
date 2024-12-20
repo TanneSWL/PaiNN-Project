@@ -1,5 +1,5 @@
 '''
-This file contains the Message and Update classes
+This file contains the Message and Update classes. 
 
 '''
 
@@ -51,11 +51,6 @@ class MessageBlock(nn.Module):
     # Atomwise layers.
     phi = self.linear_s(S)
 
-    # Compute radial basis functions.
-    #edge_rbf = RadialBasis(edge_distance,
-                           #self.num_features,
-                           #cutoff_dist)
-
     # Linear combination of the radial basis functions.
     edge_rbf_linear = self.linear_rbf(edge_rbf)
 
@@ -63,23 +58,25 @@ class MessageBlock(nn.Module):
     fcut = CosineCutoff(edge_distance,
                         cutoff_dist)
 
+    # Scale with fcut.
     W = edge_rbf_linear * fcut[..., None]
 
     # Split of W.
     vec_Ws, vec_Wvv, vec_Wvs = torch.split(phi * W, self.num_features, -1)
 
-    # Aggregate contributions from neighboring atoms ?????
+    # Aggregate contributions from neighboring atoms (scalar feature).
     ds = ds.index_add_(dim = 0,
                        index = edge_indexes[0],
                        source = vec_Ws,
                        alpha=1)
 
+    # Standardize distance vector.
     vec_n = edge_vector / edge_distance[..., None]
 
-    #dVec = vec_Wvv.unsqueeze(1) * Vec.unsqueeze(2) + vec_n * vec_Wvs.unsqueeze(1)
-    #dVec = vec_Wvv * Vec + vec_n * vec_Wvs
+    # Compute atomwise contribution. 
     dVec = vec_Wvv.unsqueeze(1) * Vec + vec_n.unsqueeze(2) * vec_Wvs.unsqueeze(1)
 
+    # Aggregate contributions from neighboring atoms (vector feature).
     dvec = dvec.index_add_(dim = 0,
                            index = edge_indexes[0],
                            source = dVec,
@@ -107,18 +104,25 @@ class UpdateBlock(nn.Module):
                 s,
                 vec):
 
+        # Linear combinations of feature vector.
         vec_U, vec_V = torch.split(self.linear_vec(vec), self.num_features, dim = -1)
 
-        vec_dot = (vec_U * vec_V).sum(dim=1) #* self.inv_sqrt_h
+        # Compute dot product. 
+        vec_dot = (vec_U * vec_V).sum(dim=1)
 
-        vec_Vn = torch.sqrt(torch.sum(vec_V**2, dim = -2) + 1e-8)      # Add an epsilon offset to make sure sqrt is always positive.
+        # Vector norm. Add an epsilon offset to make sure sqrt is always positive.
+        vec_Vn = torch.sqrt(torch.sum(vec_V**2, dim = -2) + 1e-8)
 
+        # Concatinate with scalar feature and compute linear combinations.
         vec_W = self.linear_svec(torch.cat([s, vec_Vn], dim = -1))
 
+        # Split vector.
         a_vv, a_sv, a_ss = torch.split(vec_W, self.num_features, dim = -1)
 
+        # Compute final change in scalar feature.
         ds = a_ss + a_sv * vec_dot    # * self.inv_sqrt_2
 
+        # Compute final change in vector feature.
         dvec = a_vv.unsqueeze(1) * vec_U
 
         return ds, dvec

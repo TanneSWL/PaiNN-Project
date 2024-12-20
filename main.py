@@ -1,3 +1,8 @@
+'''
+This file is the main script.
+
+'''
+
 # Import file functions and classes
 from data import GetTarget, QM9DataModule, AtomwisePostProcessing  
 from utils import LocalEdges, RadialBasis, CosineCutoff
@@ -5,7 +10,6 @@ from blocks import MessageBlock, UpdateBlock
 from model import PaiNN
 from parser import cli
 from trainer import training, test, EarlyStopping
-from plots import simple_loss_plot, true_pred_plot
 
 # Import packages
 import torch
@@ -17,11 +21,9 @@ import os
 import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-# This comes from "Training and testing" cell from notebook.py 
-
 def main():
     # set working directory
-    #os.chdir('PaiNN-Project') # comment out if working directory already is git folder
+    # os.chdir('PaiNN-Project') # comment out if working directory already is git folder
 
     args = []
     args = cli(args)
@@ -46,8 +48,7 @@ def main():
     y_mean, y_std, atom_refs = dm.get_target_stats(
         remove_atom_refs=True, divide_by_atoms=True
     )
-    print('length of test set')
-    print(len(dm.data_test))
+    
     # Initialize the model.
     painn = PaiNN(
         num_message_passing_layers=args.num_message_passing_layers,     # 3
@@ -73,10 +74,12 @@ def main():
         weight_decay=args.weight_decay,
     )
 
+    # Define scheduler.
     scheduler = ReduceLROnPlateau(optimizer = optimizer,
                                   mode = 'min',
                                   factor = 0.1)
     
+    # Stop the training with early stopping. 
     early_stopping = EarlyStopping(patience=20, min_delta=0)
 
     # Train the model.
@@ -93,6 +96,7 @@ def main():
         early_stopping = early_stopping
     )
 
+    # Test the model.
     mae, predictions, true_labels, smiles = test(
         model=painn, 
         dm=dm, 
@@ -100,9 +104,11 @@ def main():
         device=device
     )
 
+    # Modify output.
     unit_conversion = dm.unit_conversion[args.target]
     MAE = unit_conversion(mae)
 
+    # Save the results. 
     os.makedirs('output', exist_ok=True) 
     
     with open('output/train_eval_MAE.csv', "w", newline="") as file:
@@ -113,7 +119,7 @@ def main():
     with open('output/test_MAE.csv', "w", newline="") as file:
         file.write(str(MAE))
 
-    # make a pandas dataframe and save it to a csv
+    # Make a pandas dataframe and save it to a csv
     data1 = {
         'Training loss': losses_train,
         'Validation loss': losses_eval
@@ -121,7 +127,7 @@ def main():
     df = pd.DataFrame(data1)
     df.to_csv('output/train_val_loss_pandas.csv', index=False)
 
-    # make a pandas dataframe and save it to a csv
+    # Make a pandas dataframe and save it to a csv
     data2 = {
         'True Labels': true_labels,
         'Predictions': predictions,

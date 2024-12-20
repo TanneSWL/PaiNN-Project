@@ -1,3 +1,8 @@
+'''
+This file contains classes related to import and preparation of the data and preprocessing of model output.
+'''
+
+# Import packages
 import torch
 import torch.nn as nn
 import numpy as np
@@ -35,7 +40,6 @@ class QM9DataModule(pl.LightningDataModule):
         for i in range(19)
     }
 
-
     def __init__(
         self,
         target: int = 7,
@@ -56,7 +60,6 @@ class QM9DataModule(pl.LightningDataModule):
         self.splits = splits
         self.seed = seed
         self.subset_size = subset_size
-
         self.data_train = None
         self.data_val = None
         self.data_test = None
@@ -148,6 +151,7 @@ class AtomwisePostProcessing(nn.Module):
     Post-processing for (QM9) properties that are predicted as sums of atomic
     contributions.
     """
+    
     def __init__(
         self,
         num_outputs: int,

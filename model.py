@@ -1,5 +1,5 @@
 '''
-This file contains the paiNN-model itself 
+This file contains the paiNN-model itself. 
 
 '''
 
@@ -48,11 +48,11 @@ class PaiNN(nn.Module):
 
         self.embedding_s = nn.Embedding(num_unique_atoms, num_features)
         
-
+        # Create list containing message-passing layers.
         self.message = nn.ModuleList()
         self.update = nn.ModuleList()
 
-        for i in range(num_message_passing_layers): #Loop for number of messagepassing layers
+        for i in range(num_message_passing_layers): 
             self.message.append(MessageBlock(num_features, num_rbf_features))
             self.update.append(UpdateBlock(num_features))
 
@@ -99,7 +99,7 @@ class PaiNN(nn.Module):
         # ----------------------------------------------------------------------
         # LOCAL NEIGHBORHOOD
         # We create edges by the relative position of nodes from a specified
-        # cutoff within the same molecule (local interactions)
+        # cutoff within the same molecule (local interactions).
 
         edge_indexes, edge_vector, edge_distance = LocalEdges(atom_positions,
                                                               graph_indexes,
@@ -116,6 +116,7 @@ class PaiNN(nn.Module):
                                self.num_rbf_features,
                                self.cutoff_dist)
         edge_rbf = edge_rbf.to(self.device)
+        
         # ----------------------------------------------------------------------
         # MESSAGE AND UPDATE
 
@@ -137,3 +138,4 @@ class PaiNN(nn.Module):
 
         # Final output
         return atomic_contributions
+        

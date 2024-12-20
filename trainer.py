@@ -1,7 +1,8 @@
 '''
-This file is a training class :) 
+This file contains the training function including validation and a test function.
 
 '''
+
 from data import GetTarget, QM9DataModule, AtomwisePostProcessing  
 from model import PaiNN
 
@@ -73,7 +74,6 @@ def training(epoch_range, model, optimizer, post_processing, dm, device, schedul
                 atomic_contributions = atomic_contributions,
             )
             
-            #loss_step = F.mse_loss(preds, batch.y, reduction='sum')
             loss_step = F.l1_loss(preds, batch.y, reduction='sum')
 
             loss = loss_step / len(batch.y)
@@ -129,6 +129,7 @@ def training(epoch_range, model, optimizer, post_processing, dm, device, schedul
 
     return losses_train, losses_eval
 
+
 def test(model, dm, post_processing, device):
     
     mae = 0
@@ -169,7 +170,3 @@ def test(model, dm, post_processing, device):
     mae /= len(dm.data_test)
             
     return mae, predictions, true_labels, smiles_list
-
-
-    
-    
